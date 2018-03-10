@@ -1,14 +1,10 @@
 /*=========================================================================
-
   Program:   OpenIGTLink -- Example for Data Receiving Server Program
   Language:  C++
-
   Copyright (c) Insight Software Consortium. All rights reserved.
-
   This software is distributed WITHOUT ANY WARRANTY; without even
   the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
   PURPOSE.  See the above copyright notices for more information.
-
 =========================================================================*/
 
 #include <iostream>
@@ -73,8 +69,10 @@ int main(int argc, char* argv[])
     }
 
   igtl::Socket::Pointer socket;
-  
-  while (1)
+
+  bool flaga=true;
+
+  while (flaga)
     {
     //------------------------------------------------------------
     // Waiting for Connection
@@ -101,6 +99,7 @@ int main(int argc, char* argv[])
 
         // Receive generic header from the socket
         int r = socket->Receive(headerMsg->GetPackPointer(), headerMsg->GetPackSize());
+
         if (r == 0)
           {
           socket->CloseSocket();
@@ -145,6 +144,7 @@ int main(int argc, char* argv[])
         else if (strcmp(headerMsg->GetDeviceType(), "POINT") == 0)
           {
           ReceivePoint(socket, headerMsg);
+		  flaga=false;
           }
         else if (strcmp(headerMsg->GetDeviceType(), "TRAJ") == 0)
           {
@@ -377,8 +377,27 @@ int ReceivePoint(igtl::Socket * socket, igtl::MessageHeader * header)
       std::cerr << " Radius    : " << std::fixed << pointElement->GetRadius() << std::endl;
       std::cerr << " Owner     : " << pointElement->GetOwner() << std::endl;
       std::cerr << "================================" << std::endl;
+	  	  
+	  igtl::Sleep(550);
+
+	  pos[0] = -pos[0];
+	  pos[1] = -pos[1];
+	  pos[2] = -pos[2];
+
+	  pointElement->SetPosition(pos);
+
+	  igtl::PointMessage::Pointer pointMsg;
+	  pointMsg = igtl::PointMessage::New();
+      pointMsg->SetDeviceName("PointSender");
+
+	  pointMsg->AddPointElement(pointElement);
+	  pointMsg->Pack();
+	  socket->Send(pointMsg->GetPackPointer(), pointMsg->GetPackSize());
+
       }
     }
+
+  socket->CloseSocket();
 
   return 1;
 }
